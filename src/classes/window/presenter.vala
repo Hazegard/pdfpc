@@ -59,6 +59,8 @@ namespace pdfpc.Window {
          * View showing a preview of the next slide
          */
         protected View.Pdf next_view;
+        
+        protected View.Pdf curr_view;
 
         /**
          * Small views for (non-user) next slides
@@ -334,7 +336,7 @@ namespace pdfpc.Window {
             this.next_view = new View.Pdf.from_metadata(
                 metadata,
                 next_allocated_width,
-                (int) Math.floor(Options.next_height * bottom_position / (double)100 ),
+                (int) Math.floor(Options.next_height * bottom_position / (double) 100),
                 Metadata.Area.CONTENT,
                 true,
                 false,
@@ -475,6 +477,7 @@ namespace pdfpc.Window {
             // Enable the render caching if it hasn't been forcefully disabled.
             if (!Options.disable_caching) {
                 this.current_view.get_renderer().cache = Renderer.Cache.create(metadata);
+                this.curr_view.get_renderer().cache = Renderer.Cache.create(metadata);
                 this.next_view.get_renderer().cache = Renderer.Cache.create(metadata);
                 this.strict_next_view.get_renderer().cache = Renderer.Cache.create(metadata);
                 this.strict_prev_view.get_renderer().cache = Renderer.Cache.create(metadata);
@@ -502,8 +505,14 @@ namespace pdfpc.Window {
 
             var nextViewWithNotes = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
             nextViewWithNotes.set_size_request(this.next_allocated_width, -1);
+            this.curr_view.halign = Gtk.Align.CENTER;
+            this.curr_view.halign = Gtk.Align.CENTER;
             this.next_view.halign = Gtk.Align.CENTER;
             this.next_view.valign = Gtk.Align.CENTER;
+            nextViewWithNotes.pack_start(curr_view, false, false, 0);
+            var separate_row = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 2);
+            separate_row.set_size_request(0, 5);
+            nextViewWithNotes.pack_start(separate_row, false, false, 0);
             nextViewWithNotes.pack_start(next_view, false, false, 0);
 
             var notes_sw = new Gtk.ScrolledWindow(null, null);
@@ -798,6 +807,8 @@ namespace pdfpc.Window {
             int current_user_slide_number = this.presentation_controller.current_user_slide_number;
             try {
                 this.current_view.display(current_slide_number);
+                this.curr_view.display(this.metadata.user_slide_to_real_slide(
+                    current_user_slide_number));
                 this.next_view.display(this.metadata.user_slide_to_real_slide(
                     current_user_slide_number + 1));
                 if (this.presentation_controller.skip_next()) {
@@ -868,6 +879,7 @@ namespace pdfpc.Window {
         public void goto_page(int page_number) {
             try {
                 this.current_view.display(page_number);
+                this.curr_view.display(page_number);
                 this.next_view.display(page_number + 1);
             } catch( Renderer.RenderError e ) {
                 GLib.printerr("The pdf page %d could not be rendered: %s\n", page_number, e.message);
@@ -980,6 +992,7 @@ namespace pdfpc.Window {
          */
         public void set_cache_observer(CacheStatus observer) {
             observer.monitor_view(this.current_view);
+            observer.monitor_view(this.curr_view);
             observer.monitor_view(this.next_view);
 
             observer.update_progress.connect(this.prerender_progress.set_fraction);
@@ -989,6 +1002,7 @@ namespace pdfpc.Window {
 
         public void prerender_finished() {
             this.prerender_progress.opacity = 0;  // hide() causes a flash for re-layout.
+            this.overview.set_cache(this.curr_view.get_renderer().cache);
             this.overview.set_cache(this.next_view.get_renderer().cache);
         }
 
