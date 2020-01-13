@@ -345,6 +345,19 @@ namespace pdfpc.Window {
                 out next_slide_rect
             );
 
+            Gdk.Rectangle curr_slide_rect;
+            this.curr_view = new View.Pdf.from_metadata(
+                metadata,
+                next_allocated_width,
+                (int) Math.floor(Options.next_height * bottom_position / (double) 100),
+                Metadata.Area.CONTENT,
+                true,
+                false,
+                this.presentation_controller,
+                this.gdk_scale,
+                out curr_slide_rect
+            );
+
             Gdk.Rectangle strict_next_slide_rect;
             this.strict_next_view = new View.Pdf.from_metadata(
                 metadata,
@@ -408,7 +421,7 @@ namespace pdfpc.Window {
             this.slide_progress.sensitive = false;
             this.slide_progress.has_frame = false;
             this.slide_progress.key_press_event.connect(this.on_key_press_slide_progress);
-            this.slide_progress.valign = Gtk.Align.END;
+            // this.slide_progress.valign = Gtk.Align.END;
             // reduce the width of Gtk.Entry. we reserve a width for
             // 7 chars (i.e. maximal 999/999 for displaying)
             this.slide_progress.width_chars = 7;
@@ -544,7 +557,7 @@ namespace pdfpc.Window {
             status.pack_start(this.eraser_icon, false, false, 0);
 
             this.timer.halign = Gtk.Align.CENTER;
-            this.timer.valign = Gtk.Align.END;
+            // this.timer.valign = Gtk.Align.END;
 
             var progress_alignment = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
             progress_alignment.pack_start(this.prerender_progress);
@@ -567,7 +580,7 @@ namespace pdfpc.Window {
 
             Gtk.Orientation toolbox_orientation = Gtk.Orientation.HORIZONTAL;
             bool tbox_inverse = false;
-            int tb_offset = (int) Math.round(0.1*strict_prev_slide_rect.height);
+            int tb_offset = (int) Math.round(2*strict_prev_slide_rect.height);
 
             int tbox_x = 0, tbox_y = 0;
             switch (Options.toolbox_direction) {
@@ -575,7 +588,7 @@ namespace pdfpc.Window {
                     toolbox_orientation = Gtk.Orientation.HORIZONTAL;
                     tbox_inverse = false;
                     tbox_x = strict_prev_slide_rect.width + tb_offset;
-                    tbox_y = current_slide_rect.height + tb_offset;
+                    tbox_y = current_slide_rect.height + next_slide_rect.height + tb_offset;
                     break;
                 case Options.ToolboxDirection.RtoL:
                     toolbox_orientation = Gtk.Orientation.HORIZONTAL;
@@ -587,13 +600,13 @@ namespace pdfpc.Window {
                     toolbox_orientation = Gtk.Orientation.VERTICAL;
                     tbox_inverse = false;
                     tbox_x = current_slide_rect.width + tb_offset;
-                    tbox_y = next_slide_rect.height + tb_offset;
+                    tbox_y = next_slide_rect.height + curr_slide_rect.height + tb_offset;
                     break;
                 case Options.ToolboxDirection.BtoT:
                     toolbox_orientation = Gtk.Orientation.VERTICAL;
                     tbox_inverse = true;
                     tbox_x = current_slide_rect.width + tb_offset;
-                    tbox_y = next_slide_rect.height + tb_offset;
+                    tbox_y = next_slide_rect.height + curr_slide_rect.height + tb_offset;
                     break;
             }
             tbox_x /= this.gdk_scale;
